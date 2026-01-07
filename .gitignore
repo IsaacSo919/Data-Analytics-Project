@@ -1,0 +1,16 @@
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Env
+.env
+
+# VS Code
+.vscode/
