@@ -1,0 +1,14 @@
+query,count
+"  mia malkova  ",10
+"miami beach",7
+"",12
+"   ",3
+"alexis texas",1,EXTRA_COLUMN_SHOULD_BREAK_THIS_LINE
+"Kiara Knight",15
+"kiara   knight",5
+"riley reid","1,000"
+"eva elfie","abc"
+"johnny sins",-5
+"asa akira",
+"porn hd video",20
+"alexis texas",4
