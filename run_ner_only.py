@@ -1,6 +1,10 @@
 import argparse
 from pathlib import Path
 import pandas as pd
+from tqdm import tqdm
+tqdm.pandas()
+
+
 
 def build_ner_pipeline(model_name: str):
     from transformers import pipeline
@@ -44,12 +48,17 @@ def main():
     p.add_argument("--output", required=True)
     p.add_argument("--model", default="dslim/bert-base-NER")
     p.add_argument("--titlecase", action="store_true", help="Title-case queries before NER (testing)")
-    args = p.parse_args()
+    p.add_argument("--limit", type=int, default=0)
 
+    args = p.parse_args()
+    
     input_path = Path(args.input)
     output_path = Path(args.output)
 
     df = pd.read_csv(input_path, dtype={"query": "string"}, keep_default_na=False)
+    if args.limit and args.limit > 0:
+        df = df.head(args.limit)
+
     if "query" not in df.columns:
         raise ValueError(f"Input CSV must contain 'query'. Found: {list(df.columns)}")
 
@@ -58,7 +67,9 @@ def main():
 
     ner_pipe = build_ner_pipeline(args.model)
 
-    df["ner_persons"] = df["query"].apply(lambda q: extract_persons(q, ner_pipe, titlecase=args.titlecase))
+    df["ner_persons"] = df["query"].progress_apply(
+    lambda q: extract_persons(q, ner_pipe, titlecase=args.titlecase)
+)
 
     df.to_csv(output_path, index=False, encoding="utf-8")
     print(f"✅ Saved: {output_path}")
