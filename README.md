@@ -21,4 +21,8 @@ Project layout
 - `requirements.txt` — Python dependencies
 - `package.json` — Node metadata (optional)
 
-Replace this README with project-specific instructions.
+Command to run NER model only:
+"""
+The limit is changable, it's limiting how many data to be processed.
+"""
+python run_ner_only.py --input sample_train_unseen_20250105.csv --output ner_2k.csv --titlecase --limit 50000
