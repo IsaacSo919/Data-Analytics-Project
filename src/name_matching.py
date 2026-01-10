@@ -4,8 +4,43 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Tuple, Dict
 
+from typing import Dict, Tuple, Optional
+from src.normalisation import normalize_text
+
 import pandas as pd
 import ahocorasick
+
+def build_name_index(names_norm: list[str]) -> tuple[set[str], dict[str, str]]:
+    """
+    names_norm: already normalised list (e.g., 'mia khalifa')
+    returns:
+      - set for membership check
+      - canonical map (norm->norm) for now; later you can map to Proper Case if you want
+    """
+    
+    s = set(names_norm)
+    '''
+        把 list 轉成 set
+        兩個效果：
+        deduplicate（去重）
+        c in s 查詢很快（平均接近 O(1)）
+    '''
+    canon = {n: n for n in names_norm}#dict comprehension,建立一個 dictionary：key 是 n，value 也是 n
+    
+    return s, canon
+
+def verify_pornstar(candidate_text: str, names_set: set[str], canon_map: dict[str, str]) -> Optional[str]:
+    """
+    candidate_text: raw span from NER (e.g., 'Mia Khalifa')
+    returns canonical pornstar name if it exists in your list
+    """
+    c = normalize_text(candidate_text)
+    ''' 把 NER 抓到的 raw text 做 normalization,目的：跟你的 names_norm 格式一致
+        例如 "Mia Khalifa" → "mia khalifa"
+    '''
+    if c in names_set:#如果存在，從 dict 把 canonical version 拿出來回傳，目前因為 canon_map 是 n:n，所以回傳的就是同一個 norm 字串
+        return canon_map[c]
+    return None
 
 from src.normalisation import normalize_text
 @dataclass(frozen=True) #auto generate init, repr, eq, etc.

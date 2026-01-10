@@ -40,15 +40,30 @@ class PersonNER:
         if not self._pipe:
             return []
 
-        spans = self._pipe(text)
+        spans = self._pipe(text)# 跑 NER：pipeline(text) 會回傳一個 list of dicts（每個 dict 是一個 span 的資訊）
+        #常見 keys：entity_group/entity、word/text、score、start、end 等（版本不同會有差）。
         out: Set[str] = set()
+        # 建一個 set 來去重（deduplicate）。
+        # 用 type hint 說 out 是 Set[str]。
         for s in spans:
             # keys depend on pipeline version; handle both
             label = (s.get("entity_group") or s.get("entity") or "").upper()
             word = (s.get("word") or s.get("text") or "").strip()
-
+            # 有些版本用 "entity_group"（像 "PER"），有些用 "entity"（像 "B-PER"/"I-PER"）。
+            # s.get(...) 拿不到就回 None；用 or 串起來做 fallback。
+            # 最後 .upper() 統一成大寫，避免 "per"/"PER" 比對失敗。
             # CoNLL-style models use PER
             if label in ("PER", "PERSON") and word:
+                ''' 過濾條件：
+                # - label 必須是 PER 或 PERSON（人名）
+                # - 而且 word 不能是空字串
+                #filter conditions:
+                - label must be PER or PERSON (person name)  
+                - and word cannot be an empty string
+                '''
                 out.add(word)
+                # add 到 set：自動去重。
 
         return list(out)
+    # 把 set 轉回 list 回傳。
+    # 注意：set 轉 list 的順序「不保證固定」，所以每次跑出來順序可能不同。
