@@ -1,6 +1,8 @@
 import argparse
 from pathlib import Path
 import pandas as pd
+from src.name_matching import load_names_csv, build_automaton, extract_names_from_query_norm
+from src.ner_person import PersonNER
 from tqdm import tqdm
 tqdm.pandas()
 
