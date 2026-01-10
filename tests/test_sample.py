@@ -1,5 +1,5 @@
-from src import main
+from src import run_extract
 
 
 def test_greet():
-    assert main.greet() == "Hello from TNAflix"
+    assert run_extract.greet() == "Hello from TNAflix"
