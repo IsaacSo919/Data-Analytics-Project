@@ -1,21 +1,21 @@
 import argparse
 from pathlib import Path
 import pandas as pd
-from src.name_matching import load_names_csv, build_automaton, extract_names_from_query_norm
 from src.ner_person import PersonNER
 from tqdm import tqdm
 tqdm.pandas()
 
 
 
-def build_ner_pipeline(model_name: str):
+def build_ner_pipeline(model_name: str, device: int):
     from transformers import pipeline
-    # aggregation_strategy merges subword tokens into full spans
     return pipeline(
         "token-classification",
         model=model_name,
         aggregation_strategy="simple",
+        device=device,  # -1 CPU, 0 GPU
     )
+
 
 def extract_persons(text: str, ner_pipe, titlecase: bool = False) -> str:
     if text is None:
@@ -51,7 +51,8 @@ def main():
     p.add_argument("--model", default="dslim/bert-base-NER")
     p.add_argument("--titlecase", action="store_true", help="Title-case queries before NER (testing)")
     p.add_argument("--limit", type=int, default=0)
-
+    p.add_argument("--device", type=int, default=-1, help="-1 CPU, 0 first GPU")
+    p.add_argument("--batch-size", type=int, default=64)
     args = p.parse_args()
     
     input_path = Path(args.input)
@@ -67,11 +68,35 @@ def main():
     # Drop index-like columns if present
     df = df.loc[:, ~df.columns.str.match(r"^Unnamed")]
 
-    ner_pipe = build_ner_pipeline(args.model)
+    def spans_to_persons(spans):
+        out = []
+        seen = set()
+        for sp in spans:
+            label = (sp.get("entity_group") or sp.get("entity") or "").upper()
+            word = (sp.get("word") or sp.get("text") or "").strip()
+            if label in ("PER", "PERSON") and word:
+                k = word.lower()
+                if k not in seen:
+                    seen.add(k)
+                    out.append(word)
+        return ",".join(out)
 
-    df["ner_persons"] = df["query"].progress_apply(
-    lambda q: extract_persons(q, ner_pipe, titlecase=args.titlecase)
-)
+    ner_pipe = build_ner_pipeline(args.model, args.device)
+
+    texts = df["query"].astype(str).tolist()
+    if args.titlecase:
+        texts = [t.title() for t in texts]
+
+    results = []
+    B = args.batch_size
+
+    for i in tqdm(range(0, len(texts), B), desc="NER batches"):
+        batch = texts[i:i+B]
+        batch_spans = ner_pipe(batch)  # returns List[List[dict]]
+        results.extend([spans_to_persons(x) for x in batch_spans])
+
+    df["ner_persons"] = results
+
 
     df.to_csv(output_path, index=False, encoding="utf-8")
     print(f"✅ Saved: {output_path}")
