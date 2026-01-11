@@ -1,0 +1,17 @@
+Approach explanation** (maximum **300 words**) describing:
+
+   - Methodology and approach
+
+ 
+
+To solve the problem, I built a hybrid name-identification pipeline that focuses on accuracy for common search queries while still working well on new data. The main part of the system combines NER with exact dictionary matching, using a curated and normalized database of pornstar names gathered from sources like Wikipedia and industry-specific websites.
+
+To improve recall and handle new data, I use a Named Entity Recognition (NER) fallback only when needed. SpaCy and Transformer-based NER models extract PERSON entities from queries if dictionary matching does not work, mainly for high-traffic queries to keep a balance between accuracy and speed. All names found by NER are checked against the curated database to avoid mixing up general celebrities or unrelated names.
+
+All input queries are first normalized by converting to lowercase, applying Unicode normalization, and cleaning up punctuation and spaces. This helps match names consistently, even in messy search text. The name database is indexed with an Aho-Corasick automaton, which allows fast matching of thousands of full names in one pass per query. This makes the process reliable and ensures full names are found, like “mia khalifa” instead of just parts of the name.
+
+ 
+
+Performance is a key part of the design. The pipeline skips NER when it is not needed, supports batch processing and GPU use, and focuses on accuracy for the most common queries to match business needs. The final output keeps the original dataset structure and adds a new column with comma-separated names, making it ready for analytics and business intelligence tasks.
+
+ 

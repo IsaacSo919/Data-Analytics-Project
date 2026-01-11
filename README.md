@@ -1,5 +1,10 @@
-# TNAflix
+Can't wait to run this program?
+Yea!
+Run this->python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv
+Run with denylist:
+python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv --denylist data\denylist.txt
 
+# TNAflix
 A data engineering and NLP project for identifying **pornstar names** from large-scale, noisy search query data.
 
 The project focuses on building a **scalable, testable pipeline** that combines rule-based matching and modern NLP techniques to extract full person names from organic user queries.
@@ -7,21 +12,47 @@ The project focuses on building a **scalable, testable pipeline** that combines 
 ---
 Project Layout
 
-TNAflix/
-├── src/
-│   ├── data_ingestion.py      # CSV ingestion + validation
-│   ├── normalisation.py       # Text normalization utilities
-│   ├── name_matching.py       # Dictionary-based name matching
-│   └── ner_person.py          # Transformer-based PERSON NER
-├── tests/
-│   ├── test_ingestion_unittest.py
-│   ├── test_normalisation_unittest.py
-│   ├── test_name_matching_unittest.py
-│   └── test_ner_person_unittest.py
-├── run_extract.py             # Hybrid pipeline runner
-├── run_ner_only.py            # NER-only experiment runner
-├── requirements.txt
-└── README.md
+                    ┌──────────────────────────┐
+                    │  Input CSV (100K queries)│
+                    │  columns: query, count   │
+                    └─────────────┬────────────┘
+                                  │
+                                  ▼
+                      ┌───────────────────────┐
+                      │ src/data_ingestion.py │
+                      │ - read CSV            │
+                      │ - validate columns    │
+                      │ - clean count/query   │
+                      │ - add query_norm      │
+                      └─────────────┬─────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │                         │                         │
+          ▼                         ▼                         ▼
+
+┌───────────────────────┐  ┌──────────────────────────┐  ┌───────────────────────┐
+│ Dictionary Matching    │  │ NER-Only Experiment       │  │ NER Audit for Expansion│
+│ src/name_matching.py   │  │ run_ner_only.py           │  │ run_spacy_audit.py     │
+│ + names.csv            │  │ (GPU batch)               │  │ (spaCy PERSON)         │
+│ → output: names        │  │ → output: ner_persons     │  │ → output:              │
+│ (known pornstars)      │  │ (no verification)         │  │   - names (known)      │
+└─────────────┬─────────┘  └──────────────┬───────────┘  │   - person_not_in_names│
+              │                            │              │     (unknown candidates)│
+              ▼                            ▼              └───────────────┬─────────┘
+   ┌──────────────────────┐     ┌──────────────────────┐                  │
+   │ run_extract.py        │     │ output_ner_only.csv   │                  ▼
+   │ produce final 100K    │     └──────────────────────┘       ┌────────────────────────┐
+   │ output_100k.csv       │                                    │ Candidate Review Loop    │
+   └──────────┬───────────┘                                    │ - count top candidates   │
+              ▼                                                │ - human review (keep=1)  │
+   ┌──────────────────────┐                                    │ - merge into names.csv   │
+   │ output_100k.csv       │                                    └───────────────┬────────┘
+   │ columns:              │                                                    ▼
+   │ query,count,names     │                                      ┌────────────────────────┐
+   └──────────────────────┘                                      │ scripts/merge_names.py │
+                                                                  │ updates names.csv      │
+                                                                  └────────────────────────┘
+
 
 ## Quick Start
 
@@ -109,3 +140,15 @@ If you want, paste your current `run_extract.py` and `run_ner_only.py` argument 
 then run python scripts/merge_names.py.
 Output are names new only and names updated.csv
 Then move them back to names.csv
+
+9)Combining all things together, Using ERV+database name matching
+python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_2k.csv --limit 2000
+python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv.
+
+10) Get those that is being searched a lot but not in the name.csv
+python scripts\make_candidate_list.py --audit audit_100k.csv --out candidates_top500.csv --top 500
+
+11) Run with denylist:
+python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv --denylist data\denylist.txt
+
+
