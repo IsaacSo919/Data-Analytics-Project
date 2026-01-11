@@ -1,16 +1,11 @@
-# venv
 .venv/
 .venv*/
-
-# caches
 __pycache__/
 *.pyc
 .cache/
 **/.cache/
 **/huggingface/
 **/transformers/
-
-# outputs / big artifacts
 output_*.csv
 audit_*.csv
 ner_*.csv
