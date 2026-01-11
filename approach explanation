@@ -1,0 +1,20 @@
+Approach explanation** (maximum **300 words**) describing:
+   - Methodology and approach
+
+To address the problem, I designed a name-matching pipeline that filters names in stages. It first applies dictionary-driven exact matching against a curated, normalized database of pornstar names (scraped from Wikipedia and other sites) using an efficient Aho–Corasick automaton. If no match is found, a Named Entity Recognition (NER) fallback is used, leveraging both Transformer-based and SpaCy models to extract PERSON entities from high-frequency queries—balancing accuracy with computational cost.
+
+
+
+This two-stage process ensures both high precision and recall. After NER, extracted names are verified against the curated dataset to avoid misclassifying general celebrities or unrelated personal names as pornstars.
+
+
+
+The core approach I applied is dictionary-driven exact matching. All queries are first normalized (lowercasing, Unicode normalization, punctuation, and whitespace cleanup). This is to make sure about consistent matching across highly unstructured search input. A curated external dataset of pornstar names, scraped from sites, serves as the source of truth. These names are normalized identically and indexed using an Aho–Corasick automaton, enabling efficient multi-pattern matching across tens of thousands of names in a single pass per query. This ensures deterministic behavior and high precision, especially for full-name matches (e.g., “mia khalifa” instead of fragmented tokens).
+
+
+
+Performance considerations are central to the design. The pipeline prioritizes high-count queries, avoids unnecessary NER inference, and supports batched processing and GPU acceleration where available. The final output preserves the original dataset structure while enriching it with a structured names column, making it suitable for downstream analytics and business intelligence workflows.
+
+
+
+In addition, I have identified two promising methods that could significantly strengthen this pipeline. These approaches are currently outside the project scope, but I intend to pursue their implementation as resources permit. I will outline them briefly below.

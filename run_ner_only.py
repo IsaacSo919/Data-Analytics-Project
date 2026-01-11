@@ -4,7 +4,13 @@ import pandas as pd
 from src.ner_person import PersonNER
 from tqdm import tqdm
 tqdm.pandas()
+import re
 
+def clean_ner_word(w: str) -> str:
+    w = w.replace("##", "")          # remove wordpiece markers
+    w = w.replace(" ,", ",").replace(", ", ",")  # normalize commas if any
+    w = re.sub(r"\s+", " ", w).strip()
+    return w
 
 
 def build_ner_pipeline(model_name: str, device: int):
@@ -75,11 +81,15 @@ def main():
             label = (sp.get("entity_group") or sp.get("entity") or "").upper()
             word = (sp.get("word") or sp.get("text") or "").strip()
             if label in ("PER", "PERSON") and word:
+                word = clean_ner_word(word)
+                if len(word.split()) < 2:
+                    continue
                 k = word.lower()
                 if k not in seen:
                     seen.add(k)
                     out.append(word)
         return ",".join(out)
+
 
     ner_pipe = build_ner_pipeline(args.model, args.device)
 

@@ -28,6 +28,7 @@ class PersonNER:
                 "token-classification",# 建立 transformers pipeline，任務是 "token-classification"（NER 常用）。
                 model=self.model_name,
                 aggregation_strategy="simple",
+                device = 0,
             )
         except Exception:
             # transformers/torch missing or model download failed
