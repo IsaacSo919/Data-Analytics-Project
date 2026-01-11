@@ -1,16 +1,17 @@
-# Node
-node_modules/
-dist/
-
-# Python
-__pycache__/
-*.py[cod]
-venv/
+# venv
 .venv/
-*.egg-info/
+.venv*/
 
-# Env
-.env
+# caches
+__pycache__/
+*.pyc
+.cache/
+**/.cache/
+**/huggingface/
+**/transformers/
 
-# VS Code
-.vscode/
+# outputs / big artifacts
+output_*.csv
+audit_*.csv
+ner_*.csv
+*.zip
