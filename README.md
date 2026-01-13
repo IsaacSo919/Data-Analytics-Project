@@ -1,5 +1,5 @@
 Can't wait to run this program?
-Yea!
+
 ## Setup + Run (single supported method)
 
 ### 1) Create virtual environment (Python 3.12.3)
