@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from src.normalisation import normalize_text
 import pandas as pd
+from tqdm import tqdm
 
 from src.data_ingestion import ingest_queries
 from src.normalisation import normalize_text
@@ -38,6 +39,33 @@ def spacy_person_candidates(text: str, nlp) -> list[str]:
                 out.append(raw)
     return out
 
+def spacy_person_candidates_batch(texts: list[str], nlp, batch_size: int = 256) -> list[list[str]]:
+    """
+    Returns list of candidates per text.
+    Uses nlp.pipe for speed, with a tqdm progress bar.
+    """
+    results = []
+
+    for doc in tqdm(
+        nlp.pipe(texts, batch_size=batch_size),
+        total=len(texts),
+        desc="spaCy NER",
+    ):
+        out = []
+        seen = set()
+        for ent in doc.ents:
+            if ent.label_ == "PERSON":
+                raw = ent.text.strip()
+                if not raw:
+                    continue
+                key = raw.lower()
+                if key not in seen:
+                    seen.add(key)
+                    out.append(raw)
+        results.append(out)
+
+    return results
+
 
 def main():
     p = argparse.ArgumentParser()
@@ -68,35 +96,49 @@ def main():
     # 4) Load spaCy NER
     nlp = spacy.load(args.spacy_model)
 
-    known_names_out = []
+    # --- A) Dictionary matching (fast, keep simple loop) ---
+    known_names_out = [
+        extract_names_from_query_norm(q_norm, A)
+        for q_norm in df["query_norm"].astype(str).tolist()
+    ]
+
+    # --- B) spaCy NER in batches + progress bar (FAST) ---
+    texts = df["query"].astype(str).tolist()
+    all_cands = spacy_person_candidates_batch(texts, nlp, batch_size=256)
+
+    # --- C) Filter candidates NOT in names.csv ---
     person_not_in_names_out = []
-
-    for q_raw, q_norm in zip(df["query"], df["query_norm"]):
-        # A) known pornstar extraction (dictionary-based)
-        known = extract_names_from_query_norm(q_norm, A)
-        known_names_out.append(known)
-
-        # B) spaCy person candidates
-        cands = spacy_person_candidates(str(q_raw), nlp)
-
-        # C) keep only candidates NOT in names.csv (after normalization)
+    for cands in all_cands:
         unknown = []
         seen_u = set()
+
         for c in cands:
             cn = normalize_text(c)
 
-            # 1) empty / 2) in denylist / 3) already known pornstar
+            # skip empty / denylist / already-known pornstar
             if (not cn) or (cn in deny) or (cn in names_set):
                 continue
+
+            # keep only full names (2+ words) to kill garbage like "Mom", "C", "Hi"
             if len(cn.split()) < 2:
                 continue
+
+            # optional: too short is usually junk
             if len(cn) < 5:
                 continue
-            unknown.append(c)
 
+            # de-dup within the same query
+            if cn in seen_u:
+                continue
+            seen_u.add(cn)
+
+            unknown.append(c)
 
         person_not_in_names_out.append(",".join(unknown))
 
+    # write outputs
+    df["names"] = known_names_out
+    df["person_not_in_names"] = person_not_in_names_out
     df["names"] = known_names_out
     df["person_not_in_names"] = person_not_in_names_out
 
