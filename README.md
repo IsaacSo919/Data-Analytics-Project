@@ -1,8 +1,19 @@
 Can't wait to run this program?
 Yea!
-Run this->python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv
-Run with denylist:
-python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv --denylist data\denylist.txt
+## Setup + Run (single supported method)
+
+### 1) Create virtual environment (Python 3.12.3)
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+python --version
+
+2) Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+3) Run (the only command)
+python submit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output out_dict.csv --denylist data\denylist.txt
 
 # TNAflix
 A data engineering and NLP project for identifying **pornstar names** from large-scale, noisy search query data.
