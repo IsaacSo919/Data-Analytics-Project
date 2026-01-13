@@ -65,16 +65,10 @@ Project Layout
                                                                   └────────────────────────┘
 
 
-## Quick Start
 
-### 1. Set up environment
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .\.venv312\Scripts\activate
-pip install -r requirements.txt
+Futher things you can do:
 
-
-2) Run unit tests
+4) Run unit tests
 
 Run all tests:
 
@@ -88,53 +82,7 @@ python -m unittest -v tests.test_normalisation_unittest
 python -m unittest -v tests.test_name_matching_unittest
 python -m unittest -v tests.test_ner_person_unittest
 
-3) Run dictionary-based extraction (recommended baseline)
-
-This uses the curated pornstar name list + exact matching.
-
-python run_extract.py --input sample_train_unseen_20250105.csv --names data/names.csv --output output_100k.csv
-
-4) Run hybrid extraction (dictionary + NER fallback)
-
-This runs dictionary matching first, then uses Transformer NER only if:
-
-dictionary finds nothing, and
-
-the query count is high enough (to control compute)
-
-python run_extract.py \
-  --input sample_train_unseen_20250105.csv \
-  --names data/names.csv \
-  --output output_100k_hybrid.csv \
-  --use-ner \
-  --min-count-for-ner 1000
-
-5) Run NER-only (experimental)
-
-This extracts general PERSON entities (not pornstar-verified).
-
-python run_ner_only.py \
-  --input sample_train_unseen_20250105.csv \
-  --output output_ner_only_50k.csv \
-  --titlecase \
-  --limit 50000
-
-or 
-
-python run_ner_only.py --input sample_train_unseen_20250105.csv --output ner_100k_gpu.csv --titlecase --limit 100000 --device 0 --batch-size 64
-
-6) Performance experiments (NER batching)
-
-If your NER runner supports batching:
-
-python run_ner_only.py \
-  --input sample_train_unseen_20250105.csv \
-  --output output_ner_only_50k.csv \
-  --titlecase \
-  --limit 50000 \
-  --batch-size 64
-
-7) GPU check (optional)
+5) GPU check (optional)
 
 Check whether PyTorch sees your GPU:
 
@@ -147,19 +95,14 @@ If CUDA is available, set device=0 inside the Transformers pipeline.
 If you want, paste your current `run_extract.py` and `run_ner_only.py` argument list (`argparse` section). I can tailor the README commands to **exactly match** the flags you implemented so you don’t get “unrecognized arguments” later.
 ::contentReference[oaicite:0]{index=0}
 
-8)If you scrape new names, formate them using the script/blob_to_names_csv.py
+6)If you scrape new names, formate them using the script/blob_to_names_csv.py
 then run python scripts/merge_names.py.
 Output are names new only and names updated.csv
 Then move them back to names.csv
 
-9)Combining all things together, Using ERV+database name matching
-python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_2k.csv --limit 2000
-python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv.
-
-10) Get those that is being searched a lot but not in the name.csv
+7) Get those that is being searched a lot but not in the name.csv
 python scripts\make_candidate_list.py --audit audit_100k.csv --out candidates_top500.csv --top 500
 
-11) Run with denylist:
-python run_spacy_audit.py --input sample_train_unseen_20250105.csv --names data\names.csv --output audit_100k.csv --denylist data\denylist.txt
+
 
 
